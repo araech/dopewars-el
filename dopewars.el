@@ -4,7 +4,7 @@
 ;; Author: Aubrey Raech <aubrey@raech.net>
 ;; Version: dev
 ;; License: GPLv3+
-;; URL: http://raech.net/
+;; URL: https://github.com/araech/dopewars-el/
 
 ;; This file is not part of GNU Emacs
 
@@ -179,6 +179,7 @@ FURTHER DESCRIPTION.")
 ;;;
 
 (defun dope-apply-interest ()
+  "DOCSTRING"
   (let ((loan-rate (elt *dopewars-rates* 0))
         (bank-rate (elt *dopewars-rates* 1)))
     (setq dope-loan (floor (* dope-loan loan-rate))
@@ -210,7 +211,8 @@ location."
       (dope-filter vec (+ nmin (random (- nmax nmin)))))))
 
 (defun dope-get-here-drugs (drug-indices)
-  "FIXME: This. Is. Fucking. Gross."
+  "FIXME: This. Is. Fucking. Gross.
+DOCSTRING"
   (let ((vec (vector))
         modified) ; for cheap/expensive
     (dotimes (i (length drug-indices))
@@ -232,26 +234,27 @@ location."
   (if (= goal (length vec)) vec
     (dope-filter (remove (elt vec (random (length vec))) vec) goal)))
 
-(defun dope-stash-position (drug-id)
-  ;; THIS ONLY EVER IS CALLED WITH A HERE-INDEX
-  ;; Rewrite this so that it calculates stash position based on
-  ;; drug-id from the here-index.
-  (seq-position dope-stash drug-id (lambda (a b) (eq (car a) b))))
+(defun dope-stash-position (here-id)
+  "Find position of a drug from here-drugs in the player's stash.
+Return the index of the drug from here-drugs at index HERE-ID, if
+it is present in the player's stash. If it isn't, return nil."
+  (seq-position dope-stash (elt (elt here-drugs here-id) 0)
+                (lambda (a b) (eq (car a) b))))
 
 (defun dope-add-drug (here-index n)
-  "Assumes drug is available."
+  "Assumes drug is available. DOCSTRING"
   (let ((drug (elt here-drugs here-index)))
     ;; FIXME accomplish with (unless (or A B)) ?
     (cond
      ((= n 0) nil)
-     ((or (< n 0) (not (integerp n)))
+     ((or (< n 0) (not (integerp n))) ; negatives and floats
       (message "What the hell kinda number is that?") nil)
      ((< dope-cash (* n (elt drug 1)))
       (message "You can't afford it!"))
      ((> n (- *dopewars-stash-max* (dope-calc-stash-size)))
       (message "You don't have the space!"))
      (t
-      (let ((pos (dope-stash-position (elt drug 0))))
+      (let ((pos (dope-stash-position here-index)))
         (if pos ; EXISTS IN STASH ALREADY
             (let* ((mydrug (nth pos dope-stash))
                    (new-total (+ n (cadr mydrug))))
@@ -266,13 +269,14 @@ location."
         (setq dope-cash (- dope-cash (* n (elt drug 1)))))))))
 
 (defun dope-sell-drug (here-index n)
-  (let* ((drug (elt here-drugs here-index))
-         (pos (dope-stash-position (elt drug 0))))
+  "DOCSTRING"
+  (let ((drug (elt here-drugs here-index))
+        (pos (dope-stash-position here-index)))
     (cond
      ((not pos) ; Maybe this should have been determined alreadY? FIXME
       (message "You don't have that drug!"))
      ((= n 0) nil)
-     ((or (< n 0) (not (integerp n)))
+     ((or (< n 0) (not (integerp n))) ; negatives and floats
       (message "What the hell kinda number is that?") nil)
      ((> n (nth 1 (nth pos dope-stash)))
       (message "You don't have that many!"))
@@ -285,6 +289,7 @@ location."
                 (- (nth 1 my-drug) n))))))))
 
 (defun dope-calc-stash-size ()
+  "DOCSTRING"
   (let ((n 0))
     (dotimes (item (length dope-stash))
       (setq n (+ n (nth 1 (nth item dope-stash)))))
@@ -306,10 +311,9 @@ return nil."
   "Prompt user for drug selection, return index of here-drugs
 vector where drug resides."
   (let ((key (read-key "Which drug?")))
-    (cond ((or (< key ?a)
-               (> key (+ ?a (length here-drugs))))
-           (message "Dude, that ain't a drug.") nil)
-          (t (- key ?a)))))
+    (if (or (< key ?a) (>= key (+ ?a (length here-drugs))))
+        (progn (message "Dude, that isn't a drug.") nil)
+      (- key ?a))))
 
 (defun dope-sort-by-car (sequence)
   "Sort sequences in SEQUENCE by their element at index 0."
@@ -320,7 +324,7 @@ vector where drug resides."
 ;;;
 
 (defun dope--fmt-header ()
-  "FIXME. This is fucking disgusting and you should be ASHAMED."
+  "FIXME. This is fucking disgusting and you should be ASHAMED. DOCSTRING"
   (let ((program-str  "\u2014\u2550\u258f DOPEWARS \u2595\u2550\u2014")
         (location-str (dope--currentlocation))
         (day-str      (format "DAY %2d/%d" dope-day *dopewars-days*)))
@@ -419,17 +423,12 @@ vector where drug resides."
   (format "You can afford %d, and you can carry %d."
           (floor (/ dope-cash (elt (elt here-drugs here-index) 1)))
           (- *dopewars-stash-max* (dope-calc-stash-size))))
-(defun dope--fmt-selling-str (here-index)
-  "THIS IS GROSS. FIXME."
-  (let ((num
-         (nth 1 (nth (dope-stash-position
-                       (elt (elt here-drugs here-index) 0))
-                      dope-stash))))
-    (format "You have %d unit%s."
-            num (if (> num 1) "s" ""))))
+(defun dope--fmt-selling-str (stash-pos)
+  (let ((num (nth 1 (nth stash-pos dope-stash))))
+    (format "You have %d unit%s." num (if (> num 1) "s" ""))))
 
 (defun dope-alert (lines)
-  "Fish tacos"
+  "DOCSTRING"
   (let ((inhibit-read-only t))
     (erase-buffer)
     (insert (format "\n\n\n"))
@@ -482,7 +481,7 @@ vector where drug resides."
 ;;;
 
 (defun dope-new-day-at (dest)
-  "New day code FIXME"
+  "New day code FIXME DOCSTRING"
   (if (= dope-day *dopewars-days*)
       ;; start end-game procedure FIXME
       (dope-alert "I haven't programmed the endgame sequence yet.")
@@ -498,6 +497,7 @@ vector where drug resides."
       (dope-print-game))))
 
 (defun dw-do-jet ()
+  "DOCSTRING"
   (interactive)
   (let ((inhibit-read-only t))
     (insert (format "JET\nWhere you wanna go? [1-%d] > "
@@ -511,6 +511,7 @@ vector where drug resides."
         (dope-print-game)))))
 
 (defun dw-do-buy ()
+  "DOCSTRING"
   (interactive)
   (let ((inhibit-read-only t))
     (insert "BUY\n  -> " (dope--fmt-letter-request-str (length here-drugs)))
@@ -524,16 +525,17 @@ vector where drug resides."
   (dope-print-game))
 
 (defun dw-do-sell ()
+  "DOCSTRING"
   (interactive)
   (let ((inhibit-read-only t))
     (insert "SELL\n  ->" (dope--fmt-letter-request-str (length here-drugs)))
     (let ((here-index (dope-select-drug)))
       (when here-index
         (insert (dope--drugname here-index))
-        (let ((pos (dope-stash-position (elt (elt here-drugs here-index) 0))))
+        (let ((pos (dope-stash-position here-index)))
           (if (not pos)
               (message "You don't have that drug!")
-            (insert "\n     " (dope--fmt-selling-str here-index)
+            (insert "\n     " (dope--fmt-selling-str pos)
                     "\n  -> How many do you sell? ")
             (let ((num (read-number "How many do you sell? "
                                     (cadr (nth pos dope-stash)))))
@@ -541,10 +543,12 @@ vector where drug resides."
   (dope-print-game))
 
 (defun dw-do-drop ()
+  "DOCSTRING"
   (interactive)
   (dope-print-game))
 
 (defun dw-do-nothing ()
+  "DOCSTRING"
   (interactive)
   (dope-print-game))
 
