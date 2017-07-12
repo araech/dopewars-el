@@ -28,9 +28,9 @@ package an elisp program.
 That being said, here are some features that I still have yet to implement:
 
 * Bronx / Ghetto activities
-  * Loan shark!
+  * ~~Loan shark!~~ *done!*
   * Bank!
-* 'Drop' action
+* ~~'Drop' action~~ *done!*
 * Subway encounters (An old woman on the subway says...)
 * Endgame procedure
 * High scores
